@@ -1,0 +1,30 @@
+{
+    "name": "chronovm-narrate",
+    "version": "0.1.0",
+    "description": "Human-readable narration from ChronoVM step analysis",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "chronovm-core": "*",
+        "chronovm-model": "*",
+        "chronovm-graph": "*",
+        "chronovm-explain": "*",
+        "chronovm-insight": "*",
+        "chronovm-explain-ai": "*",
+        "chronovm-analyze": "*"
+    },
+    "files": [
+        "src"
+    ]
+}

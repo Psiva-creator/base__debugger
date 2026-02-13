@@ -1,0 +1,73 @@
+.syntax-viewer {
+    border-radius: 8px;
+    overflow: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 12px 0;
+    user-select: text;
+}
+
+.syntax-viewer__code {
+    display: table;
+    min-width: 100%;
+}
+
+.syntax-viewer__line {
+    display: table-row;
+    transition: background-color 0.15s ease;
+}
+
+.syntax-viewer__line-number {
+    display: table-cell;
+    text-align: right;
+    padding: 0 16px 0 16px;
+    user-select: none;
+    min-width: 48px;
+    color: #636e7b;
+    font-size: 13px;
+    vertical-align: top;
+    line-height: 1.6;
+}
+
+.syntax-viewer--dark .syntax-viewer__line-number {
+    color: #484f58;
+}
+
+.syntax-viewer--light .syntax-viewer__line-number {
+    color: #b4b9c0;
+}
+
+.syntax-viewer__line-content {
+    display: table-cell;
+    padding: 0 16px 0 0;
+    white-space: pre;
+    line-height: 1.6;
+}
+
+.syntax-viewer__line--active {
+    background-color: rgba(56, 139, 253, 0.15);
+}
+
+.syntax-viewer__line--active .syntax-viewer__line-number {
+    color: #7aa2f7;
+}
+
+.syntax-viewer__line--changed {
+    background-color: rgba(63, 185, 80, 0.10);
+}
+
+.syntax-viewer__line--changed .syntax-viewer__line-number {
+    color: #56d364;
+}
+
+.syntax-viewer__line--active.syntax-viewer__line--changed {
+    background-color: rgba(56, 139, 253, 0.15);
+}
+
+.syntax-viewer__error {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: #f97583;
+    border-bottom: 1px solid rgba(249, 117, 131, 0.2);
+}

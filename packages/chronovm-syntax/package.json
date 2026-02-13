@@ -1,0 +1,28 @@
+{
+    "name": "chronovm-syntax",
+    "version": "0.1.0",
+    "description": "GitHub-level syntax highlighting viewer for ChronoVM",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "shiki": "^3.0.0",
+        "react": "^19.1.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.0"
+    },
+    "files": [
+        "src"
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "name": "chronovm-explain-ai",
+    "version": "0.1.0",
+    "description": "Structured explanation plans from ChronoVM insights for AI narrative generation",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "chronovm-insight": "*"
+    },
+    "files": [
+        "src"
+    ]
+}

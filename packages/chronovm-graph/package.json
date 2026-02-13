@@ -1,0 +1,25 @@
+{
+    "name": "chronovm-graph",
+    "version": "0.1.0",
+    "description": "Deterministic graph representation for ChronoVM memory models",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "chronovm-core": "*",
+        "chronovm-model": "*"
+    },
+    "files": [
+        "src"
+    ]
+}

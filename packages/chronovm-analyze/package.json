@@ -1,0 +1,29 @@
+{
+    "name": "chronovm-analyze",
+    "version": "0.1.0",
+    "description": "Single composing API across all ChronoVM reasoning layers",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "chronovm-core": "*",
+        "chronovm-model": "*",
+        "chronovm-graph": "*",
+        "chronovm-explain": "*",
+        "chronovm-insight": "*",
+        "chronovm-explain-ai": "*"
+    },
+    "files": [
+        "src"
+    ]
+}
