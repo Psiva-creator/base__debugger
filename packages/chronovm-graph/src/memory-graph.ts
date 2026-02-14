@@ -4,9 +4,10 @@ import type {
     EnvironmentEntry,
     ObjectNode,
     FunctionNode,
+    ListNode,
 } from 'chronovm-model';
 
-export type GraphNodeKind = 'environment' | 'primitive' | 'object' | 'function';
+export type GraphNodeKind = 'environment' | 'primitive' | 'object' | 'function' | 'list';
 
 export type GraphNode = {
     readonly id: string;
@@ -32,6 +33,7 @@ function heapNodeKind(node: HeapNode): GraphNodeKind {
 function heapNodeLabel(node: HeapNode): string {
     if (node.kind === 'primitive') return String(node.value);
     if (node.kind === 'object') return 'Object';
+    if (node.kind === 'list') return 'List';
     return `fn@${node.entry}`;
 }
 
@@ -96,6 +98,16 @@ export function buildMemoryGraph(model: MemoryModel): MemoryGraph {
                 label: 'closure',
             };
             edgeSet.set(`${edge.from}|${edge.to}|${edge.label}`, edge);
+        } else if (node.kind === 'list') {
+            const list = node as ListNode;
+            for (const elem of list.elements) {
+                const edge: GraphEdge = {
+                    from: list.address,
+                    to: elem.address,
+                    label: `[${elem.index}]`,
+                };
+                edgeSet.set(`${edge.from}|${edge.to}|${edge.label}`, edge);
+            }
         }
     }
 

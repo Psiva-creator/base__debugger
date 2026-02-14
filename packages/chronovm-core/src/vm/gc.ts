@@ -1,6 +1,6 @@
-import type { VMState } from './state.ts';
-import type { HeapAddress, HeapValue, FunctionValue, ObjectValue } from './heap.ts';
-import type { EnvironmentAddress, EnvironmentRecord } from './environment.ts';
+import type { VMState } from './state';
+import type { HeapAddress, HeapValue, FunctionValue, ObjectValue } from './heap';
+import type { EnvironmentAddress, EnvironmentRecord } from './environment';
 
 function markReachable(state: VMState): { heap: Set<string>; envs: Set<string> } {
     const reachableHeap = new Set<string>();

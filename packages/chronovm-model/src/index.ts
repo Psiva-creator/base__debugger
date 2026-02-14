@@ -1,7 +1,7 @@
 export {
     buildMemoryModel,
     diffMemoryModels,
-} from './memory-model.ts';
+} from './memory-model';
 
 export type {
     MemoryModel,
@@ -10,5 +10,6 @@ export type {
     PrimitiveNode,
     ObjectNode,
     FunctionNode,
+    ListNode,
     EnvironmentEntry,
-} from './memory-model.ts';
+} from './memory-model';

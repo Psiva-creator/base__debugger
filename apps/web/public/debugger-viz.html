@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChronoVM — Cinematic Debugger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ── Reset & Foundations ─────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #e4e4eb;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Top Chrome Bar ──────────────────────────────────────── */
+        .chrome-bar {
+            height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            background: linear-gradient(180deg, #111118 0%, #0d0d14 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+            gap: 16px;
+        }
+
+        .chrome-dots {
+            display: flex;
+            gap: 7px;
+        }
+
+        .chrome-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .chrome-dots span:nth-child(1) {
+            background: #ff5f57;
+        }
+
+        .chrome-dots span:nth-child(2) {
+            background: #ffbd2e;
+        }
+
+        .chrome-dots span:nth-child(3) {
+            background: #28c840;
+        }
+
+        .chrome-title {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .chrome-step {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chrome-step .badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: rgba(56, 132, 255, 0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(56, 132, 255, 0.2);
+        }
+
+        .chrome-step .step-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 400;
+        }
+
+        /* ── Layout ──────────────────────────────────────────────── */
+        .main-layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+        }
+
+        /* ── Left Panel: Code Editor ──────────────────────────────── */
+        .code-panel {
+            background: #0c0c14;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, rgba(56, 132, 255, 0.15) 40%, rgba(56, 132, 255, 0.15) 60%, transparent 100%);
+        }
+
+        .editor-header {
+            padding: 16px 24px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .editor-header .file-icon {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 3px;
+        }
+
+        .editor-header .file-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        .editor-header .lang-tag {
+            margin-left: auto;
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(96, 165, 250, 0.6);
+        }
+
+        .code-body {
+            flex: 1;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .code-line {
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            height: 38px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            font-weight: 400;
+            position: relative;
+            transition: background 0.5s ease;
+        }
+
+        .code-line .gutter {
+            width: 40px;
+            flex-shrink: 0;
+            text-align: right;
+            padding-right: 18px;
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.12);
+            user-select: none;
+        }
+
+        .code-line .source {
+            flex: 1;
+            white-space: pre;
+        }
+
+        /* Syntax colours */
+        .kw {
+            color: #c084fc;
+            font-weight: 500;
+        }
+
+        /* keyword: purple */
+        .var {
+            color: #93c5fd;
+        }
+
+        /* variable: light blue */
+        .num {
+            color: #34d399;
+        }
+
+        /* number: emerald */
+        .op {
+            color: #94a3b8;
+        }
+
+        /* operator: slate */
+        .cond-kw {
+            color: #f472b6;
+            font-weight: 500;
+        }
+
+        /* if/else: pink */
+        .bool-val {
+            color: #fbbf24;
+            font-weight: 500;
+        }
+
+        /* True/False */
+        .colon {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Active line highlight */
+        .code-line.active {
+            background: rgba(56, 132, 255, 0.06);
+        }
+
+        .code-line.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #3b82f6, #818cf8);
+            border-radius: 0 2px 2px 0;
+            box-shadow: 0 0 12px rgba(56, 132, 255, 0.5);
+        }
+
+        .code-line.active .gutter {
+            color: rgba(96, 165, 250, 0.7);
+        }
+
+        /* Execution pointer */
+        .exec-pointer {
+            position: absolute;
+            left: 6px;
+            width: 6px;
+            height: 6px;
+            background: #60a5fa;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(96, 165, 250, 0.7), 0 0 20px rgba(96, 165, 250, 0.3);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .code-line.active .exec-pointer {
+            opacity: 1;
+            animation: pointer-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pointer-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 8px rgba(96, 165, 250, 0.7), 0 0 20px rgba(96, 165, 250, 0.3);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 0 14px rgba(96, 165, 250, 0.9), 0 0 32px rgba(96, 165, 250, 0.4);
+                transform: scale(1.3);
+            }
+        }
+
+        /* ── Right Panel: Memory Visualization ────────────────────── */
+        .viz-panel {
+            background: linear-gradient(160deg, #f0f2f8 0%, #e8ecf4 50%, #e2e6f0 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 32px;
+            gap: 24px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .section-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        /* ── Memory Heap Cards ────────────────────────────────────── */
+        .heap-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .heap-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.03),
+                0 8px 24px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            position: relative;
+            opacity: 0;
+            transform: translateY(14px);
+            animation: card-appear 0.7s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        .heap-card:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .heap-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .heap-card.glow-blue {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.03),
+                0 8px 24px rgba(59, 130, 246, 0.08),
+                0 0 0 1px rgba(59, 130, 246, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .heap-card.glow-blue::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 17px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), transparent 60%);
+            z-index: -1;
+            animation: glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes card-appear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes glow-pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .var-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1e293b;
+            background: rgba(59, 130, 246, 0.08);
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+            min-width: 44px;
+            text-align: center;
+        }
+
+        .assign-arrow {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            color: #94a3b8;
+        }
+
+        .assign-arrow .arrow-line {
+            width: 28px;
+            height: 2px;
+            background: linear-gradient(90deg, #94a3b8, #60a5fa);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .assign-arrow .arrow-head {
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 7px solid #60a5fa;
+        }
+
+        .val-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(99, 102, 241, 0.06));
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(59, 130, 246, 0.12);
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .val-box.new-val {
+            animation: val-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;
+        }
+
+        @keyframes val-pop {
+            0% {
+                transform: scale(0.7);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .type-tag {
+            margin-left: auto;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            background: rgba(148, 163, 184, 0.08);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .addr-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.58rem;
+            color: rgba(148, 163, 184, 0.5);
+            position: absolute;
+            top: 6px;
+            right: 12px;
+        }
+
+        /* ── Evaluation Bubble ─────────────────────────────────────── */
+        .eval-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .eval-bubble {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 20px;
+            padding: 22px 26px;
+            position: relative;
+            box-shadow:
+                0 4px 16px rgba(251, 191, 36, 0.06),
+                0 12px 32px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            animation: bubble-float 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.6s forwards;
+        }
+
+        @keyframes bubble-float {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .eval-bubble .ephemeral-tag {
+            position: absolute;
+            top: -9px;
+            left: 20px;
+            font-size: 0.56rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #d97706;
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            padding: 2px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .eval-expression {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .eval-expression .operand {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            background: rgba(59, 130, 246, 0.06);
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.1);
+        }
+
+        .eval-expression .eval-op {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .eval-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .result-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.08);
+            padding: 5px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            opacity: 0;
+            animation: result-appear 0.5s ease 1.4s forwards;
+        }
+
+        .result-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        @keyframes result-appear {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-explanation {
+            font-size: 0.72rem;
+            color: #64748b;
+            opacity: 0;
+            animation: fade-in 0.5s ease 1.6s forwards;
+        }
+
+        /* ── Control Flow Section ──────────────────────────────────── */
+        .flow-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .flow-card {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow:
+                0 4px 16px rgba(99, 102, 241, 0.05),
+                0 12px 32px rgba(0, 0, 0, 0.03),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            opacity: 0;
+            animation: card-appear 0.7s cubic-bezier(0.23, 1, 0.32, 1) 1.0s forwards;
+        }
+
+        .flow-path {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-top: 10px;
+        }
+
+        .flow-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .flow-node .node-box {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid;
+        }
+
+        .flow-node .node-box.condition {
+            background: rgba(244, 114, 182, 0.06);
+            color: #be185d;
+            border-color: rgba(244, 114, 182, 0.2);
+            border-radius: 10px 10px 2px 2px;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+            padding: 8px 24px;
+            border: none;
+            background: linear-gradient(135deg, rgba(244, 114, 182, 0.1), rgba(236, 72, 153, 0.08));
+        }
+
+        .flow-node .node-box.block-enter {
+            background: rgba(16, 185, 129, 0.06);
+            color: #047857;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .flow-node .node-box.assign {
+            background: rgba(59, 130, 246, 0.06);
+            color: #1d4ed8;
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .flow-node .node-label {
+            font-size: 0.54rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #94a3b8;
+        }
+
+        .flow-arrow-segment {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: 60px;
+            height: 2px;
+            margin: 0 4px;
+        }
+
+        .flow-arrow-segment .arrow-track {
+            width: 100%;
+            height: 2px;
+            background: rgba(99, 102, 241, 0.12);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-arrow-segment .arrow-track::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #818cf8, transparent);
+            border-radius: 2px;
+            animation: flow-move 1.8s ease-in-out infinite;
+        }
+
+        .flow-arrow-segment .seg-head {
+            width: 0;
+            height: 0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 6px solid #818cf8;
+            flex-shrink: 0;
+        }
+
+        @keyframes flow-move {
+            0% {
+                left: -24px;
+            }
+
+            100% {
+                left: calc(100% + 24px);
+            }
+        }
+
+        .flow-arrow-segment:nth-child(4) .arrow-track::after {
+            animation-delay: 0.3s;
+        }
+
+        .flow-arrow-segment:nth-child(6) .arrow-track::after {
+            animation-delay: 0.6s;
+        }
+
+        /* TRUE badge on the flow arrow */
+        .flow-arrow-segment .true-badge {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.52rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.08);
+            padding: 1px 7px;
+            border-radius: 3px;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            white-space: nowrap;
+        }
+
+        /* ── Bottom Status Bar ───────────────────────────────────── */
+        .status-bar {
+            height: 32px;
+            background: #0d0d14;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .status-bar .status-item {
+            font-size: 0.62rem;
+            color: rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-bar .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #059669;
+            box-shadow: 0 0 6px rgba(5, 150, 105, 0.5);
+        }
+
+        .status-bar .status-item.right {
+            margin-left: auto;
+        }
+
+        /* ── SVG Overlay for Neon Arrows ─────────────────────────── */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* ── Utilities ───────────────────────────────────────────── */
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar for viz panel */
+        .viz-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .viz-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .viz-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        /* ── Animated Neon Connection Lines (SVG) ─────────────────── */
+        .neon-line {
+            stroke: url(#neon-gradient);
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 8 4;
+            stroke-dashoffset: 0;
+            animation: dash-flow 1.5s linear infinite;
+            filter: url(#glow);
+        }
+
+        @keyframes dash-flow {
+            to {
+                stroke-dashoffset: -24;
+            }
+        }
+
+        /* ── Watermark ───────────────────────────────────────────── */
+        .watermark {
+            position: absolute;
+            bottom: 14px;
+            right: 20px;
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(0, 0, 0, 0.08);
+            user-select: none;
+        }
+
+        /* ── Step Progress Indicator ─────────────────────────────── */
+        .step-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 24px;
+            margin-top: 20px;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s ease;
+        }
+
+        .step-dot.completed {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .step-dot.current {
+            background: rgba(59, 130, 246, 0.4);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+            transform: scale(1.3);
+        }
+
+        /* ── Connection line from heap to eval ────────────────────── */
+        .connection-hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            margin: -6px 0;
+        }
+
+        .connection-hint .conn-line {
+            width: 24px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent);
+        }
+
+        .connection-hint .conn-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(148, 163, 184, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════════ Chrome Bar ═══════════════ -->
+    <div class="chrome-bar">
+        <div class="chrome-dots"><span></span><span></span><span></span></div>
+        <div class="chrome-title">ChronoVM Debugger</div>
+        <div class="chrome-step">
+            <div class="badge">Step 3 / 3</div>
+            <div class="step-label">Conditional Assignment</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ Main Layout ═══════════════ -->
+    <div class="main-layout">
+
+        <!-- ═══ Left: Code Editor ═══ -->
+        <div class="code-panel">
+            <div class="editor-header">
+                <div class="file-icon"></div>
+                <div class="file-name">main.py</div>
+                <div class="lang-tag">Python</div>
+            </div>
+
+            <div class="code-body">
+                <!-- blank spacer lines for centering feel -->
+                <div class="code-line">
+                    <div class="gutter">1</div>
+                    <div class="source"><span class="op"># Variable assignment</span></div>
+                    <div class="exec-pointer"></div>
+                </div>
+                <div class="code-line completed-line">
+                    <div class="gutter">2</div>
+                    <div class="source"><span class="var">x</span> <span class="op">=</span> <span class="num">2</span>
+                    </div>
+                    <div class="exec-pointer"></div>
+                </div>
+                <div class="code-line completed-line">
+                    <div class="gutter">3</div>
+                    <div class="source"><span class="cond-kw">if</span> <span class="var">x</span> <span
+                            class="op">==</span> <span class="num">2</span><span class="colon">:</span></div>
+                    <div class="exec-pointer"></div>
+                </div>
+                <div class="code-line active">
+                    <div class="gutter">4</div>
+                    <div class="source"> <span class="var">y</span> <span class="op">=</span> <span class="num">5</span>
+                    </div>
+                    <div class="exec-pointer"></div>
+                </div>
+                <div class="code-line">
+                    <div class="gutter">5</div>
+                    <div class="source"></div>
+                    <div class="exec-pointer"></div>
+                </div>
+            </div>
+
+            <!-- Step dots -->
+            <div class="step-progress">
+                <div class="step-dot completed"></div>
+                <div class="step-dot completed"></div>
+                <div class="step-dot current"></div>
+            </div>
+        </div>
+
+        <!-- ═══ Right: Memory Visualization ═══ -->
+        <div class="viz-panel">
+
+            <!-- ── Persistent Memory (Heap) ── -->
+            <div class="heap-section">
+                <div class="section-label">Persistent Memory — Heap</div>
+
+                <div class="heap-card glow-blue">
+                    <div class="addr-tag">0x001</div>
+                    <div class="var-badge">x</div>
+                    <div class="assign-arrow">
+                        <div class="arrow-line"></div>
+                        <div class="arrow-head"></div>
+                    </div>
+                    <div class="val-box">2</div>
+                    <div class="type-tag">int</div>
+                </div>
+
+                <div class="heap-card glow-blue">
+                    <div class="addr-tag">0x002</div>
+                    <div class="var-badge">y</div>
+                    <div class="assign-arrow">
+                        <div class="arrow-line"></div>
+                        <div class="arrow-head"></div>
+                    </div>
+                    <div class="val-box new-val">5</div>
+                    <div class="type-tag">int</div>
+                </div>
+            </div>
+
+            <!-- ── Temporary Evaluation ── -->
+            <div class="eval-section">
+                <div class="section-label">Temporary Evaluation</div>
+
+                <div class="eval-bubble">
+                    <div class="ephemeral-tag">Ephemeral</div>
+                    <div class="eval-expression">
+                        <div class="operand">x → 2</div>
+                        <div class="eval-op">==</div>
+                        <div class="operand">2</div>
+                    </div>
+                    <div class="eval-result">
+                        <div class="result-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            True
+                        </div>
+                        <div class="result-explanation">Condition satisfied — entering if block</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Control Flow ── -->
+            <div class="flow-section">
+                <div class="section-label">Control Flow</div>
+
+                <div class="flow-card">
+                    <div class="flow-path">
+                        <div class="flow-node">
+                            <div class="node-box condition">x == 2</div>
+                            <div class="node-label">Evaluate</div>
+                        </div>
+
+                        <div class="flow-arrow-segment">
+                            <div class="arrow-track"></div>
+                            <div class="seg-head"></div>
+                            <div class="true-badge">✓ True</div>
+                        </div>
+
+                        <div class="flow-node">
+                            <div class="node-box block-enter">if body</div>
+                            <div class="node-label">Enter</div>
+                        </div>
+
+                        <div class="flow-arrow-segment">
+                            <div class="arrow-track"></div>
+                            <div class="seg-head"></div>
+                        </div>
+
+                        <div class="flow-node">
+                            <div class="node-box assign">y = 5</div>
+                            <div class="node-label">Assign</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="watermark">ChronoVM</div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════ Status Bar ═══════════════ -->
+    <div class="status-bar">
+        <div class="status-item"><span class="status-dot"></span> Running</div>
+        <div class="status-item">Ln 4, Col 1</div>
+        <div class="status-item">Frame: main</div>
+        <div class="status-item right">Python 3.12 · ChronoVM v0.1.0</div>
+    </div>
+
+    <!-- SVG defs for glow filters -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <linearGradient id="neon-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.1" />
+                <stop offset="50%" stop-color="#818cf8" stop-opacity="0.8" />
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.1" />
+            </linearGradient>
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+
+</body>
+
+</html>

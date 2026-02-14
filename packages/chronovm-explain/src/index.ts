@@ -1,4 +1,4 @@
-export { explainDiff } from './explain.ts';
+export { explainDiff } from './explain';
 
 export type {
     ExplanationEvent,
@@ -13,4 +13,8 @@ export type {
     EnvironmentCreatedEvent,
     EnvironmentDestroyedEvent,
     ClosureCapturedEvent,
-} from './explain.ts';
+    ListCreatedEvent,
+    ListAppendedEvent,
+    ListIndexAccessedEvent,
+    ListIndexUpdatedEvent,
+} from './explain';

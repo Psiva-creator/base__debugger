@@ -1,2 +1,2 @@
-export { createExplanationPlans } from './explain-ai.ts';
-export type { ExplanationPlan } from './explain-ai.ts';
+export { createExplanationPlans } from './explain-ai';
+export type { ExplanationPlan } from './explain-ai';

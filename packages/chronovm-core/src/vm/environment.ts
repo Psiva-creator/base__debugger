@@ -7,8 +7,8 @@
 // All operations are PURE — return new VMState.
 // ─────────────────────────────────────────────
 
-import type { VMState } from './state.ts';
-import type { HeapAddress } from './heap.ts';
+import type { VMState } from './state';
+import type { HeapAddress } from './heap';
 
 /** Branded type alias for environment addresses. */
 export type EnvironmentAddress = string & { readonly __brand: 'EnvironmentAddress' };
@@ -99,7 +99,7 @@ export function envLookup(
     let current: EnvironmentAddress | null = envAddress;
 
     while (current !== null) {
-        const record = state.environmentRecords[current];
+        const record: EnvironmentRecord | undefined = state.environmentRecords[current];
         if (!record) {
             return null;
         }

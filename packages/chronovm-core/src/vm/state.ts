@@ -6,9 +6,9 @@
 // needed to resume, snapshot, or replay execution.
 // ─────────────────────────────────────────────
 
-import type { IRInstruction } from '../ir/instructions.ts';
-import type { HeapAddress, HeapValue } from './heap.ts';
-import type { EnvironmentAddress, EnvironmentRecord } from './environment.ts';
+import type { IRInstruction } from '../ir/instructions';
+import type { HeapAddress, HeapValue } from './heap';
+import type { EnvironmentAddress, EnvironmentRecord } from './environment';
 
 export type StackFrame = {
     readonly returnAddress: number;
@@ -57,6 +57,9 @@ export type VMState = {
 
     /** Call stack — tracks active procedure frames. */
     readonly callStack: readonly StackFrame[];
+
+    /** Output buffer — print() calls append here. */
+    readonly output: readonly string[];
 };
 
 /**
@@ -86,5 +89,6 @@ export function createInitialState(program: readonly IRInstruction[]): VMState {
         stepCount: 0,
         isRunning: true,
         callStack: [],
+        output: [],
     };
 }

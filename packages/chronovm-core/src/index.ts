@@ -3,15 +3,17 @@
 // ─────────────────────────────────────────────
 
 // ── IR ──
-export { Opcode } from './ir/instructions.ts';
+export { Opcode } from './ir/instructions';
 export type {
     IRInstruction,
     LoadConstInstruction,
     ArithmeticInstruction,
+    UnaryInstruction,
     StoreInstruction,
     LoadInstruction,
     JumpInstruction,
     JumpIfFalseInstruction,
+    JumpIfTrueInstruction,
     HaltInstruction,
     CallInstruction,
     RetInstruction,
@@ -19,29 +21,37 @@ export type {
     NewObjectInstruction,
     SetPropertyInstruction,
     GetPropertyInstruction,
-} from './ir/instructions.ts';
+    BuildClassInstruction,
+    NewListInstruction,
+    ListAppendInstruction,
+    ListGetInstruction,
+    ListSetInstruction,
+    ListLenInstruction,
+    StackInstruction,
+    PrintInstruction,
+} from './ir/instructions';
 
 // ── VM ──
-export { createInitialState } from './vm/state.ts';
-export type { VMState, StackFrame } from './vm/state.ts';
-export { heapAlloc, heapRead } from './vm/heap.ts';
-export type { HeapAddress, HeapValue, FunctionValue, ObjectValue } from './vm/heap.ts';
-export { createEnvironment, envBind, envLookup } from './vm/environment.ts';
-export type { EnvironmentAddress, EnvironmentRecord } from './vm/environment.ts';
-export { step } from './vm/step.ts';
-export { runVM, createStepper } from './vm/vm.ts';
-export type { VMResult, VMOptions } from './vm/vm.ts';
-export { collectGarbage } from './vm/gc.ts';
+export { createInitialState } from './vm/state';
+export type { VMState, StackFrame } from './vm/state';
+export { heapAlloc, heapRead } from './vm/heap';
+export type { HeapAddress, HeapValue, FunctionValue, ObjectValue, ListValue } from './vm/heap';
+export { createEnvironment, envBind, envLookup } from './vm/environment';
+export type { EnvironmentAddress, EnvironmentRecord } from './vm/environment';
+export { step } from './vm/step';
+export { runVM, createStepper } from './vm/vm';
+export type { VMResult, VMOptions } from './vm/vm';
+export { collectGarbage } from './vm/gc';
 
 // ── Trace ──
-export { createSnapshot } from './trace/snapshot.ts';
-export type { VMSnapshot } from './trace/snapshot.ts';
-export { createTrace, appendSnapshot, sealTrace } from './trace/trace.ts';
-export type { ExecutionTrace } from './trace/trace.ts';
+export { createSnapshot } from './trace/snapshot';
+export type { VMSnapshot } from './trace/snapshot';
+export { createTrace, appendSnapshot, sealTrace } from './trace/trace';
+export type { ExecutionTrace } from './trace/trace';
 
 // ── Errors ──
-export { VMError, VMErrorType } from './errors/vm-errors.ts';
-export type { VMErrorData } from './errors/vm-errors.ts';
+export { VMError, VMErrorType } from './errors/vm-errors';
+export type { VMErrorData } from './errors/vm-errors';
 export {
     stackUnderflow,
     invalidOpcode,
@@ -52,4 +62,4 @@ export {
     typeError,
     invalidObjectAccess,
     propertyNotFound,
-} from './errors/vm-errors.ts';
+} from './errors/vm-errors';

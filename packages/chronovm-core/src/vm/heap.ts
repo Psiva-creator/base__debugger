@@ -6,9 +6,9 @@
 // No GC. No pointer reuse. All operations are pure.
 // ─────────────────────────────────────────────
 
-import type { VMState } from './state.ts';
-import { heapAccessViolation } from '../errors/vm-errors.ts';
-import type { IRInstruction } from '../ir/instructions.ts';
+import type { VMState } from './state';
+import { heapAccessViolation } from '../errors/vm-errors';
+import type { IRInstruction } from '../ir/instructions';
 
 export type FunctionValue = {
     readonly type: 'function';
@@ -21,11 +21,19 @@ export type ObjectValue = {
     readonly properties: Readonly<Record<string, HeapAddress>>;
 };
 
+export type ListValue = {
+    readonly type: 'list';
+    readonly elements: readonly HeapAddress[];
+};
+
 export type HeapValue =
     | number
     | boolean
+    | string
+    | null
     | FunctionValue
-    | ObjectValue;
+    | ObjectValue
+    | ListValue;
 
 /** Branded type alias for heap addresses. */
 export type HeapAddress = string & { readonly __brand: 'HeapAddress' };

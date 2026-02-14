@@ -5,7 +5,7 @@
 // Every error carries full context for debugging.
 // ─────────────────────────────────────────────
 
-import type { IRInstruction } from '../ir/instructions.ts';
+import type { IRInstruction } from '../ir/instructions';
 
 export const VMErrorType = {
     STACK_UNDERFLOW: 'STACK_UNDERFLOW',

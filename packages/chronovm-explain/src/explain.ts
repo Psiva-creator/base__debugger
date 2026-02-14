@@ -69,6 +69,39 @@ export type ClosureCapturedEvent = {
     readonly environment: string;
 };
 
+export type ListCreatedEvent = {
+    readonly type: 'ListCreated';
+    readonly address: string;
+};
+
+export type ListAppendedEvent = {
+    readonly type: 'ListAppended';
+    readonly list: string;
+    readonly value: string;
+};
+
+export type ListIndexAccessedEvent = {
+    readonly type: 'ListIndexAccessed';
+    readonly list: string;
+    readonly index: number;
+    readonly value: string;
+};
+
+export type ListIndexUpdatedEvent = {
+    readonly type: 'ListIndexUpdated';
+    readonly list: string;
+    readonly index: number;
+    readonly value: string;
+};
+
+export type ControlFlowDecisionEvent = {
+    readonly type: 'ControlFlowDecision';
+    readonly fromPc: number;
+    readonly toPc: number;
+    readonly condition?: boolean;
+    readonly label: string;
+};
+
 export type ExplanationEvent =
     | VariableBoundEvent
     | VariableReboundEvent
@@ -80,7 +113,12 @@ export type ExplanationEvent =
     | ObjectCollectedEvent
     | EnvironmentCreatedEvent
     | EnvironmentDestroyedEvent
-    | ClosureCapturedEvent;
+    | ClosureCapturedEvent
+    | ListCreatedEvent
+    | ListAppendedEvent
+    | ListIndexAccessedEvent
+    | ListIndexUpdatedEvent
+    | ControlFlowDecisionEvent;
 
 function compareEvents(a: ExplanationEvent, b: ExplanationEvent): number {
     if (a.type !== b.type) return a.type < b.type ? -1 : 1;
@@ -184,6 +222,58 @@ function findEnvironmentEvents(
     return events;
 }
 
+function findListChanges(
+    diff: MemoryDiff,
+    graphBefore: MemoryGraph,
+    graphAfter: MemoryGraph,
+): ExplanationEvent[] {
+    const events: ExplanationEvent[] = [];
+
+    // ListCreated: new list heap nodes
+    for (const addr of diff.addedHeapNodes) {
+        const node = graphAfter.nodes.find((n: GraphNode) => n.id === addr);
+        if (node && node.kind === 'list') {
+            events.push({ type: 'ListCreated', address: addr });
+        }
+    }
+
+    // ListAppended / ListIndexUpdated: changed list heap nodes
+    for (const addr of diff.changedHeapNodes) {
+        const beforeNode = graphBefore.nodes.find((n: GraphNode) => n.id === addr);
+        const afterNode = graphAfter.nodes.find((n: GraphNode) => n.id === addr);
+        if (!beforeNode || !afterNode) continue;
+        if (beforeNode.kind !== 'list' || afterNode.kind !== 'list') continue;
+
+        const beforeEdges = graphBefore.edges
+            .filter((e) => e.from === addr && e.label.startsWith('['))
+            .sort((a, b) => a.label < b.label ? -1 : a.label > b.label ? 1 : 0);
+        const afterEdges = graphAfter.edges
+            .filter((e) => e.from === addr && e.label.startsWith('['))
+            .sort((a, b) => a.label < b.label ? -1 : a.label > b.label ? 1 : 0);
+
+        const beforeMap = new Map(beforeEdges.map((e) => [e.label, e.to]));
+        const afterMap = new Map(afterEdges.map((e) => [e.label, e.to]));
+
+        // New indices → appended
+        for (const [label, to] of [...afterMap.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)) {
+            if (!beforeMap.has(label)) {
+                events.push({ type: 'ListAppended', list: addr, value: to });
+            }
+        }
+
+        // Changed indices → updated
+        for (const [label, to] of [...afterMap.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)) {
+            if (beforeMap.has(label) && beforeMap.get(label) !== to) {
+                const indexMatch = label.match(/\[(\d+)\]/);
+                const index = indexMatch ? parseInt(indexMatch[1]!, 10) : 0;
+                events.push({ type: 'ListIndexUpdated', list: addr, index, value: to });
+            }
+        }
+    }
+
+    return events;
+}
+
 export function explainDiff(
     diff: MemoryDiff,
     graphBefore: MemoryGraph,
@@ -238,6 +328,7 @@ export function explainDiff(
     events.push(...findPropertyChanges(diff, graphBefore, graphAfter));
     events.push(...findClosureEvents(diff, graphAfter));
     events.push(...findEnvironmentEvents(graphBefore, graphAfter));
+    events.push(...findListChanges(diff, graphBefore, graphAfter));
 
     return events.sort(compareEvents);
 }

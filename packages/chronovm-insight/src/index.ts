@@ -1,4 +1,4 @@
-export { analyzeEvents } from './insight.ts';
+export { analyzeEvents } from './insight';
 
 export type {
     Insight,
@@ -6,4 +6,4 @@ export type {
     ObjectAllocatedAndCollected,
     ClosureRetainsEnvironment,
     PropertyMutatedAfterAllocation,
-} from './insight.ts';
+} from './insight';

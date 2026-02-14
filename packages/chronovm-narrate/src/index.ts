@@ -1,1 +1,1 @@
-export { narrateStep } from './narrate.ts';
+export { narrateStep } from './narrate';

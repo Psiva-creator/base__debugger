@@ -1,5 +1,5 @@
 import type { VMState } from 'chronovm-core';
-import type { HeapValue, FunctionValue, ObjectValue, HeapAddress } from 'chronovm-core';
+import type { HeapValue, FunctionValue, ObjectValue, ListValue, HeapAddress } from 'chronovm-core';
 import type { EnvironmentAddress, EnvironmentRecord } from 'chronovm-core';
 
 export type PrimitiveNode = {
@@ -21,7 +21,13 @@ export type FunctionNode = {
     readonly environment: string;
 };
 
-export type HeapNode = PrimitiveNode | ObjectNode | FunctionNode;
+export type ListNode = {
+    readonly kind: 'list';
+    readonly address: string;
+    readonly elements: readonly { readonly index: number; readonly address: string }[];
+};
+
+export type HeapNode = PrimitiveNode | ObjectNode | FunctionNode | ListNode;
 
 export type EnvironmentEntry = {
     readonly address: string;
@@ -63,8 +69,16 @@ function classifyHeapValue(address: string, value: HeapValue): HeapNode {
             }));
             return { kind: 'object', address, properties };
         }
+        if ((value as ListValue).type === 'list') {
+            const list = value as ListValue;
+            const elements = list.elements.map((elemAddr, index) => ({
+                index,
+                address: elemAddr as string,
+            }));
+            return { kind: 'list', address, elements };
+        }
     }
-    return { kind: 'primitive', address, value: value as number };
+    return { kind: 'primitive', address, value: value as unknown as number };
 }
 
 function buildEnvironmentEntry(record: EnvironmentRecord): EnvironmentEntry {

@@ -181,6 +181,93 @@ export function narrateStep(
             case 'EnvironmentDestroyed':
                 sentences.push(`The current scope is exited.`);
                 break;
+
+            case 'ListCreated':
+                sentences.push(`An empty list is created.`);
+                break;
+
+            case 'ListAppended': {
+                const variable = findVariableReferencing(
+                    analysis.memoryModel,
+                    event.list
+                );
+                const value = resolvePrimitive(
+                    analysis.memoryModel,
+                    event.value
+                );
+
+                if (variable && value !== null) {
+                    sentences.push(
+                        `The value ${value} is appended to ${variable}.`
+                    );
+                } else if (variable) {
+                    sentences.push(
+                        `A value is appended to ${variable}.`
+                    );
+                } else {
+                    sentences.push(`A value is appended to the list.`);
+                }
+                break;
+            }
+
+            case 'ListIndexAccessed': {
+                const variable = findVariableReferencing(
+                    analysis.memoryModel,
+                    event.list
+                );
+
+                if (variable) {
+                    sentences.push(
+                        `The element at index ${event.index} of ${variable} is accessed.`
+                    );
+                } else {
+                    sentences.push(
+                        `The element at index ${event.index} of the list is accessed.`
+                    );
+                }
+                break;
+            }
+
+            case 'ListIndexUpdated': {
+                const variable = findVariableReferencing(
+                    analysis.memoryModel,
+                    event.list
+                );
+                const value = resolvePrimitive(
+                    analysis.memoryModel,
+                    event.value
+                );
+
+                if (variable && value !== null) {
+                    sentences.push(
+                        `The value at index ${event.index} of ${variable} is updated to ${value}.`
+                    );
+                } else if (variable) {
+                    sentences.push(
+                        `The value at index ${event.index} of ${variable} is updated.`
+                    );
+                } else {
+                    sentences.push(
+                        `The value at index ${event.index} of the list is updated.`
+                    );
+                }
+                break;
+            }
+
+            case 'ControlFlowDecision': {
+                if (event.label === 'branch taken') {
+                    sentences.push(`The condition is met, so the program branches to the next block.`);
+                } else if (event.label === 'branch not taken') {
+                    sentences.push(`The condition is not met, so the program skips the next block.`);
+                } else if (event.label === 'jump') {
+                    if (event.toPc < event.fromPc) {
+                        sentences.push(`Looping back to check the condition again.`);
+                    } else {
+                        sentences.push(`Jumping to the next part of the program.`);
+                    }
+                }
+                break;
+            }
         }
     }
 

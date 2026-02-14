@@ -7,14 +7,14 @@
 // Returns finalState + sealed trace.
 // ─────────────────────────────────────────────
 
-import type { IRInstruction } from '../ir/instructions.ts';
-import type { VMState } from './state.ts';
-import { createInitialState } from './state.ts';
-import { step } from './step.ts';
-import { createSnapshot } from '../trace/snapshot.ts';
-import type { ExecutionTrace } from '../trace/trace.ts';
-import { createTrace, appendSnapshot, sealTrace } from '../trace/trace.ts';
-import { collectGarbage } from './gc.ts';
+import type { IRInstruction } from '../ir/instructions';
+import type { VMState } from './state';
+import { createInitialState } from './state';
+import { step } from './step';
+import { createSnapshot } from '../trace/snapshot';
+import type { ExecutionTrace } from '../trace/trace';
+import { createTrace, appendSnapshot, sealTrace } from '../trace/trace';
+import { collectGarbage } from './gc';
 
 /** Maximum instructions before forced halt (prevents infinite loops). */
 const DEFAULT_MAX_STEPS = 10_000;

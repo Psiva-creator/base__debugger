@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { createInitialState, step } from 'chronovm-core';
 import type { IRInstruction, VMState } from 'chronovm-core';
 import { analyzeStep } from 'chronovm-analyze';
@@ -6,7 +6,8 @@ import type { StepAnalysis } from 'chronovm-analyze';
 import type { GraphNode, GraphEdge } from 'chronovm-graph';
 import { narrateStep } from 'chronovm-narrate';
 import { SourceEditor } from './SourceEditor';
-import { compile } from './compiler';
+import { compile } from './python-compiler';
+import { PYTHON_LESSONS } from './lessons';
 import './App.css';
 
 /* ── Helpers ── */
@@ -15,9 +16,11 @@ function buildTrace(program: IRInstruction[]): VMState[] {
     const trace: VMState[] = [];
     let state = createInitialState(program);
     trace.push(state);
-    while (state.isRunning) {
+    let safety = 0;
+    while (state.isRunning && safety < 5000) {
         state = step(state);
         trace.push(state);
+        safety++;
     }
     return trace;
 }
@@ -142,25 +145,66 @@ function ExplanationView({ analysis }: { analysis: StepAnalysis }) {
     );
 }
 
-/* ── Default Source ── */
-
-const DEFAULT_SOURCE = `x = 2
-obj = {}
-obj.a = x`;
-
 /* ── App ── */
 
 export function App() {
-    const [sourceCode, setSourceCode] = useState(DEFAULT_SOURCE);
-    const [ir, setIr] = useState<IRInstruction[]>(() => compile(DEFAULT_SOURCE));
+    const [currentLessonIdx, setCurrentLessonIdx] = useState(0);
+    const currentLesson = PYTHON_LESSONS[currentLessonIdx]!;
+
+    const [sourceCode, setSourceCode] = useState(currentLesson.code);
+    const [ir, setIr] = useState<IRInstruction[]>(() => {
+        try { return compile(currentLesson.code); }
+        catch { return [{ opcode: 'HALT' as const }]; }
+    });
     const [stepIndex, setStepIndex] = useState(0);
     const [compileError, setCompileError] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
 
-    const trace = useMemo(() => buildTrace(ir), [ir]);
+    function handleLessonChange(idx: number) {
+        const lesson = PYTHON_LESSONS[idx]!;
+        setCurrentLessonIdx(idx);
+        setSourceCode(lesson.code);
+        setIsPlaying(false);
+        try {
+            const compiled = compile(lesson.code);
+            setIr(compiled);
+            setStepIndex(0);
+            setCompileError(null);
+        } catch (err: unknown) {
+            setCompileError(err instanceof Error ? err.message : String(err));
+        }
+    }
+
+    const trace = useMemo(() => {
+        try { return buildTrace(ir); }
+        catch { return [createInitialState(ir)]; }
+    }, [ir]);
+    const maxStep = trace.length - 1;
     const analysis: StepAnalysis = useMemo(() => analyzeStep(trace, stepIndex), [trace, stepIndex]);
     const sentences = useMemo(() => narrateStep(analysis), [analysis]);
+    const currentOutput = trace[stepIndex]?.output ?? [];
+
+    // ── Autoplay ──
+    useEffect(() => {
+        if (!isPlaying) return;
+        if (stepIndex >= maxStep) {
+            setIsPlaying(false);
+            return;
+        }
+        const timer = setInterval(() => {
+            setStepIndex(prev => {
+                if (prev >= maxStep) {
+                    setIsPlaying(false);
+                    return prev;
+                }
+                return prev + 1;
+            });
+        }, 400);
+        return () => clearInterval(timer);
+    }, [isPlaying, stepIndex, maxStep]);
 
     function handleRun() {
+        setIsPlaying(false);
         try {
             const compiled = compile(sourceCode);
             setIr(compiled);
@@ -171,20 +215,37 @@ export function App() {
         }
     }
 
+    function handleRestart() { setIsPlaying(false); setStepIndex(0); }
+    function handleBack() { setIsPlaying(false); setStepIndex(i => Math.max(0, i - 1)); }
+    function handleNext() { setIsPlaying(false); setStepIndex(i => Math.min(maxStep, i + 1)); }
+    function handlePlayPause() { setIsPlaying(p => !p); }
+
     return (
         <div className="app">
             <header className="header">
-                <h1>ChronoVM Demo</h1>
+                <h1>🐍 ChronoVM — Python Course</h1>
             </header>
 
             <div className="two-column-layout">
                 <div className="panel editor-panel">
                     <div className="editor-toolbar">
-                        <h2>Source Code</h2>
+                        <div className="course-nav">
+                            <select
+                                value={currentLessonIdx}
+                                onChange={(e) => handleLessonChange(Number(e.target.value))}
+                                className="lesson-select"
+                            >
+                                {PYTHON_LESSONS.map((lesson, i) => (
+                                    <option key={lesson.id} value={i}>{lesson.title}</option>
+                                ))}
+                            </select>
+                        </div>
                         <button className="run-btn" onClick={handleRun}>
                             ▶ Run
                         </button>
                     </div>
+
+
                     {compileError && (
                         <div className="compile-error">{compileError}</div>
                     )}
@@ -198,19 +259,42 @@ export function App() {
 
                 <div className="right-column">
                     <div className="panel controls-panel">
-                        <div className="controls">
-                            <label>
-                                Step {stepIndex} / {trace.length - 1}
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={trace.length - 1}
-                                    value={stepIndex}
-                                    onChange={(e) => setStepIndex(Number(e.target.value))}
-                                />
-                            </label>
+                        <div className="step-label">
+                            Step <strong>{stepIndex}</strong> / {maxStep}
+                        </div>
+                        <input
+                            type="range"
+                            className="step-slider"
+                            min={0}
+                            max={maxStep}
+                            value={stepIndex}
+                            onChange={(e) => { setIsPlaying(false); setStepIndex(Number(e.target.value)); }}
+                        />
+                        <div className="playback-controls">
+                            <button className="playback-btn" onClick={handleRestart} title="Restart">
+                                ⏮
+                            </button>
+                            <button className="playback-btn" onClick={handleBack} title="Back" disabled={stepIndex === 0}>
+                                ⏪
+                            </button>
+                            <button className={`playback-btn play-btn ${isPlaying ? 'playing' : ''}`} onClick={handlePlayPause} title={isPlaying ? 'Pause' : 'Auto Play'}>
+                                {isPlaying ? '⏸' : '▶'}
+                            </button>
+                            <button className="playback-btn" onClick={handleNext} title="Next" disabled={stepIndex >= maxStep}>
+                                ⏩
+                            </button>
                         </div>
                     </div>
+
+                    {/* Output Panel */}
+                    {currentOutput.length > 0 && (
+                        <div className="panel output-panel">
+                            <h2>📤 Output</h2>
+                            <pre className="output-content">
+                                {currentOutput.join('\n')}
+                            </pre>
+                        </div>
+                    )}
 
                     <div className="panel narration-panel">
                         <h2>What Happened</h2>
@@ -228,11 +312,6 @@ export function App() {
                         <ExplanationView analysis={analysis} />
                     </div>
                 </div>
-            </div>
-
-            <div className="panel memory-panel">
-                <h2>Memory</h2>
-                <MemoryView analysis={analysis} />
             </div>
         </div>
     );

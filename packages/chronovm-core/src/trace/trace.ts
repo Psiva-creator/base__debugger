@@ -5,7 +5,7 @@
 // Immutable after runVM() returns.
 // ─────────────────────────────────────────────
 
-import type { VMSnapshot } from './snapshot.ts';
+import type { VMSnapshot } from './snapshot';
 
 /**
  * The complete execution trace — an ordered sequence of VM snapshots.
@@ -36,6 +36,6 @@ export function appendSnapshot(trace: ExecutionTrace, snapshot: VMSnapshot): voi
  */
 export function sealTrace(trace: ExecutionTrace): Readonly<ExecutionTrace> {
     return Object.freeze({
-        snapshots: Object.freeze([...trace.snapshots]),
+        snapshots: Object.freeze([...trace.snapshots]) as unknown as VMSnapshot[],
     });
 }
