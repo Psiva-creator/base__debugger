@@ -11,8 +11,8 @@ import { compileWithSourceMap } from "@/lib/compiler";
 import type { CompileResult } from "@/lib/compiler";
 import { PYTHON_LESSONS } from "@/lib/lessons";
 import { SourceEditor } from "./SourceEditor";
-import { ExecutionView } from "./execution/ExecutionView";
-import { ModeProvider } from "@/contexts/ModeContext";
+import { ExecutionLayout } from "./execution/ExecutionView";
+import { PanelModeProvider } from "@/contexts/ModeContext";
 import { ModeToggle } from "./ModeToggle";
 import { useAnimationPlan } from "@/hooks/useAnimationPlan";
 
@@ -232,7 +232,7 @@ export function ChronoApp() {
     }, [semanticSteps, stepIndex]);
 
     return (
-        <ModeProvider>
+        <PanelModeProvider>
             <div className="flex flex-col h-screen overflow-hidden">
                 {/* ── Header ── */}
                 <header className="flex items-center justify-between px-6 py-3 border-b border-[var(--border)] bg-[var(--surface)]">
@@ -367,9 +367,9 @@ export function ChronoApp() {
                             </div>
                         </div>
 
-                        {/* Execution View — takes remaining space */}
+                        {/* Execution Layout — takes remaining space */}
                         <div className="flex-1 overflow-hidden">
-                            <ExecutionView
+                            <ExecutionLayout
                                 analysis={analysis}
                                 sentences={sentences}
                                 output={currentOutput}
@@ -380,11 +380,12 @@ export function ChronoApp() {
                                 variableOrder={variableOrder}
                                 currentStep={stepIndex}
                                 loopState={loopState}
+                                sourceLine={currentSemanticStep?.sourceLine}
                             />
                         </div>
                     </div>
                 </div>
             </div>
-        </ModeProvider>
+        </PanelModeProvider>
     );
 }

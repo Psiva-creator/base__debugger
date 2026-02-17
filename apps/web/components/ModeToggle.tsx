@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMode, type ViewMode } from "@/contexts/ModeContext";
+import { usePanelModes, type ViewMode } from "@/contexts/ModeContext";
 
 const modes: { key: ViewMode; label: string; icon: string }[] = [
     { key: "learning", label: "Learn", icon: "📖" },
@@ -9,12 +9,17 @@ const modes: { key: ViewMode; label: string; icon: string }[] = [
 ];
 
 /**
- * ModeToggle — Segmented pill toggle for Learning / Pro mode.
+ * ModeToggle — Global segmented pill toggle for Learning / Pro mode.
  *
+ * Switches ALL panels at once via syncAllPanelsTo.
  * Fixed width, no layout shift. Active segment has accent gradient fill.
  */
 export function ModeToggle() {
-    const { mode, setMode } = useMode();
+    const { panelModes, syncAllPanelsTo } = usePanelModes();
+    // Derive global mode: "learning" if all panels are learning, else "pro"
+    const mode: ViewMode = Object.values(panelModes).every((m) => m === "learning")
+        ? "learning"
+        : "pro";
 
     return (
         <div className="relative flex items-center rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] p-0.5 gap-0">
@@ -23,7 +28,7 @@ export function ModeToggle() {
                 return (
                     <button
                         key={m.key}
-                        onClick={() => setMode(m.key)}
+                        onClick={() => syncAllPanelsTo(m.key)}
                         className={`
                             relative z-10 flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold
                             transition-colors duration-200 cursor-pointer select-none

@@ -1,0 +1,22 @@
+{
+    "name": "chronovm-sync",
+    "version": "0.1.0",
+    "description": "Live synchronized multi-user execution for ChronoVM sessions",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {},
+    "files": [
+        "src"
+    ]
+}

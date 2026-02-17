@@ -1,0 +1,22 @@
+{
+    "name": "chronovm-governance",
+    "version": "0.1.0",
+    "description": "Role-based layout governance for ChronoVM projects",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {},
+    "files": [
+        "src"
+    ]
+}
