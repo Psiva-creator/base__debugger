@@ -1,0 +1,11 @@
+# Env
+.env
+.env.*
+
+# Build
+dist/
+node_modules/
+
+# IDE
+.vscode/
+*.swp
